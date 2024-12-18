@@ -1,0 +1,74 @@
+<?php
+// Enable error reporting for debugging
+error_reporting(E_ALL);
+ini_set('display_errors', 1);
+
+// Database connection details
+$servername = "localhost";
+$username = "u961960612_sarvodayauser";
+$password = "O#e9b8^^G:";
+$database = "u961960612_sarvodayadb";
+
+// Create connection
+$conn = new mysqli($servername, $username, $password, $database);
+
+// Check connection
+if ($conn->connect_error) {
+    die("Connection failed: " . $conn->connect_error);
+}
+
+// Form data validation
+if ($_SERVER["REQUEST_METHOD"] === "POST") {
+    $name = trim($_POST['fname']);
+    $phone = trim($_POST['phone']);
+    $email = trim($_POST['email']);
+
+    // Validate name (only letters and spaces allowed)
+    if (!preg_match("/^[a-zA-Z ]*$/", $name)) {
+        die("Invalid name. Only letters and spaces are allowed.");
+    }
+
+    // Validate phone (only numbers allowed)
+    if (!preg_match("/^[0-9]{10,15}$/", $phone)) {
+        die("Invalid phone number. Only numbers with 10 to 15 digits are allowed.");
+    }
+
+    // Validate email
+    if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+        die("Invalid email address.");
+    }
+
+    // Prepare and bind
+    $stmt = $conn->prepare("INSERT INTO sarvodaya (name, phone, email) VALUES (?, ?, ?)");
+    if ($stmt === false) {
+        die("Error preparing statement: " . $conn->error);
+    }
+
+    $stmt->bind_param("sss", $name, $phone, $email);
+
+    // Execute statement and check for errors
+    if ($stmt->execute()) {
+        // Send email
+        $to = "rohitwarke08@gmail.com, iammihirkarande@gmail.com";
+        $subject = "Sarvodaya Form Submission";
+        $message = "Name: $name\nPhone: $phone\nEmail: $email";
+        $headers = "From: noreply@sarvodaya.com";
+
+        if (mail($to, $subject, $message, $headers)) {
+            // Redirect to thank you page
+            header("Location: thankyou.php");
+            exit();
+        } else {
+            echo "Error: Email not sent.";
+        }
+    } else {
+        echo "Error: " . $stmt->error;
+    }
+
+    // Close the statement
+    $stmt->close();
+}
+
+// Close the database connection
+$conn->close();
+?>
